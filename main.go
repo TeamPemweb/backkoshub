@@ -2,8 +2,8 @@ package main
 
 import (
 	"os"
-	"github.com/wkloose/tempproject.git/initializers"
-	"github.com/wkloose/tempproject.git/middleware"
+	"github.com/TeamPemweb/backkoshub/initializers"
+	"github.com/TeamPemweb/backkoshub/middleware"
 	"github.com/gin-gonic/gin"
 )
 

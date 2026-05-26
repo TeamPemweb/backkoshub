@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/wkloose/tempproject.git/models"
+	"github.com/TeamPemweb/backkoshub/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
