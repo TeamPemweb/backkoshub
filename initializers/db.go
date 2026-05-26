@@ -22,7 +22,14 @@ func ConnectToDB() {
 }
 
 func SyncDatabase() {
-	err := DB.AutoMigrate(&models.User{})
+	err := DB.AutoMigrate(
+		&models.User{},
+		&models.Billing{},
+		&models.Complaint{},
+		&models.Kamar{},
+		&models.TipeKamar{},
+		&models.ProfilPemilik{},
+		&models.ProfilPenghuni{},)
 	if err != nil {
 		fmt.Println("failed to migrate database")
 	}
