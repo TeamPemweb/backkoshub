@@ -3,8 +3,7 @@ package main
 import (
 	"os"
 	"github.com/TeamPemweb/backkoshub/initializers"
-	"github.com/TeamPemweb/backkoshub/middleware"
-	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin"	
 )
 
 func init() {
@@ -15,10 +14,7 @@ func init() {
 
 func main() {
 	router := gin.Default()
+	Routes(router)
 
-	router.Use(middleware.RequireAuth)
-	RegisterRoutes(router)
-
-	
 	router.Run(":" + os.Getenv("PORT"))
 }
