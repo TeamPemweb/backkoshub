@@ -44,3 +44,20 @@ func RequireAuth(c *gin.Context) {
 	c.Set("Role", user.Role)
     c.Next()
 }
+func RoleMiddleware(requiredRole string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		roleInterface, exists := c.Get("Role")
+		if !exists {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Akses ditolak: Role tidak ditemukan"})
+			return
+		}
+
+		role, ok := roleInterface.(string)
+		if !ok || role != requiredRole {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Akses ditolak: Anda tidak memiliki hak akses"})
+			return
+		}
+
+		c.Next()
+	}
+}

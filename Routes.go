@@ -30,5 +30,16 @@ func Routes(r *gin.Engine) {
 				authProtected.GET("/profile", controllers.GetProfile)
 			}
 		}
+		ownerGroup := v1.Group("/owner")
+		ownerGroup.Use(middleware.RequireAuth, middleware.RoleMiddleware("pemilik"))
+		{
+
+		}
+
+		residentGroup := v1.Group("/resident")
+		residentGroup.Use(middleware.RequireAuth, middleware.RoleMiddleware("penghuni"))
+		{
+			
+		}
 	}
 }
