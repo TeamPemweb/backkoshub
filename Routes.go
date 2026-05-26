@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/TeamPemweb/backkoshub/controllers"
+	"github.com/TeamPemweb/backkoshub/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -16,10 +17,18 @@ func Routes(r *gin.Engine) {
 
 	v1 := r.Group("/api/v1")
 	{
-    auth := v1.Group("/auth")
-    {
-        auth.POST("/register", controllers.Register)
-        auth.POST("/login", controllers.Login)      
-    }
+		auth := v1.Group("/auth")
+		{
+			auth.POST("/register", controllers.Register)
+			auth.POST("/login", controllers.Login)
+
+			authProtected := auth.Group("")
+			authProtected.Use(middleware.RequireAuth)
+			{
+				authProtected.POST("/choose-role", controllers.ChooseRole)
+				authProtected.POST("/profile/setup", controllers.SetupProfile)
+				authProtected.GET("/profile", controllers.GetProfile)
+			}
+		}
 	}
 }
