@@ -16,13 +16,30 @@ func GetComplaints(c *gin.Context) {
 	}
 	pemilikID := userIDInterface.(uint)
 
-	complaints, err := services.GetAllComplaintsByPemilik(pemilikID)
+	complaints, err := services.GetActiveComplaintsByPemilik(pemilikID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, complaints)
+}
+
+func GetOwnerComplaintHistory(c *gin.Context) {
+	userIDInterface, exists := c.Get("UserID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Sesi tidak valid"})
+		return
+	}
+	pemilikID := userIDInterface.(uint)
+
+	history, err := services.GetComplaintHistoryByPemilik(pemilikID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, history)
 }
 
 func UpdateComplaintStatus(c *gin.Context) {

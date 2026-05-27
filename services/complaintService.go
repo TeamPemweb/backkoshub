@@ -21,7 +21,7 @@ type UpdateComplaintInput struct {
 	StatusKeluhan string `json:"status_keluhan" binding:"required,oneof=pending proses selesai declined"`
 }
 
-func GetAllComplaintsByPemilik(pemilikID uint) ([]ComplaintResponseDTO, error) {
+func GetActiveComplaintsByPemilik(pemilikID uint) ([]ComplaintResponseDTO, error) {
 	var complaints []ComplaintResponseDTO
 
 	err := initializers.DB.Model(&models.Complaint{}).
@@ -29,7 +29,22 @@ func GetAllComplaintsByPemilik(pemilikID uint) ([]ComplaintResponseDTO, error) {
 		Joins("JOIN kamars ON kamars.id = complaints.kamar_id").
 		Joins("JOIN tipe_kamars ON tipe_kamars.id = kamars.tipe_kamar_id").
 		Joins("JOIN profil_penghunis ON profil_penghunis.user_id = kamars.penghuni_id").
-		Where("tipe_kamars.pemilik_id = ?", pemilikID).
+		Where("tipe_kamars.pemilik_id = ? AND complaints.status_keluhan IN ?", pemilikID, []string{"pending", "proses"}).
+		Order("complaints.created_at DESC").
+		Find(&complaints).Error
+
+	return complaints, err
+}
+
+func GetComplaintHistoryByPemilik(pemilikID uint) ([]ComplaintResponseDTO, error) {
+	var complaints []ComplaintResponseDTO
+
+	err := initializers.DB.Model(&models.Complaint{}).
+		Select("complaints.id, kamars.nomor_kamar, profil_penghunis.nama as nama_penghuni, complaints.isi_keluhan, complaints.status_keluhan, complaints.created_at").
+		Joins("JOIN kamars ON kamars.id = complaints.kamar_id").
+		Joins("JOIN tipe_kamars ON tipe_kamars.id = kamars.tipe_kamar_id").
+		Joins("JOIN profil_penghunis ON profil_penghunis.user_id = kamars.penghuni_id").
+		Where("tipe_kamars.pemilik_id = ? AND complaints.status_keluhan IN ?", pemilikID, []string{"selesai", "declined"}).
 		Order("complaints.created_at DESC").
 		Find(&complaints).Error
 
@@ -51,6 +66,7 @@ func UpdateComplaintStatus(complaintID uint, pemilikID uint, status string) erro
 	complaint.StatusKeluhan = status
 	return initializers.DB.Save(&complaint).Error
 }
+
 func CreateComplaint(residentID uint, isiKeluhan string) error {
 	var kamar models.Kamar
 	err := initializers.DB.Where("penghuni_id = ?", residentID).First(&kamar).Error
