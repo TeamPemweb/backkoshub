@@ -101,3 +101,44 @@ func DeleteRoom(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Kamar berhasil dihapus"})
 }
+func JoinRoom(c *gin.Context) {
+	userIDInterface, exists := c.Get("UserID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Sesi tidak valid"})
+		return
+	}
+	residentID := userIDInterface.(uint)
+
+	var input struct {
+		KodeKamar string `json:"kode_kamar" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kode kamar wajib diisi"})
+		return
+	}
+
+	if err := services.JoinRoom(residentID, input.KodeKamar); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Berhasil bergabung ke dalam kamar"})
+}
+
+func GetMyRoom(c *gin.Context) {
+	userIDInterface, exists := c.Get("UserID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Sesi tidak valid"})
+		return
+	}
+	residentID := userIDInterface.(uint)
+
+	kamar, err := services.GetMyRoom(residentID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, kamar)
+}

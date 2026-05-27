@@ -59,7 +59,8 @@ func Routes(r *gin.Engine) {
 		residentGroup := v1.Group("/resident")
 		residentGroup.Use(middleware.RequireAuth, middleware.RoleMiddleware("penghuni"))
 		{
-
+			residentGroup.POST("/rooms/join", controllers.JoinRoom)
+			residentGroup.GET("/my-room", controllers.GetMyRoom)
 		}
 	}
 }

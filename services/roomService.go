@@ -3,6 +3,7 @@ package services
 import (
 	"errors"
 	"math/rand"
+	"time"
 	"github.com/TeamPemweb/backkoshub/initializers"
 	"github.com/TeamPemweb/backkoshub/models"
 )
@@ -92,4 +93,36 @@ func DeleteRoom(id uint, pemilikID uint) error {
 	}
 
 	return initializers.DB.Delete(&kamar).Error
+}
+func JoinRoom(residentID uint, kodeKamar string) error {
+	var kamar models.Kamar
+	err := initializers.DB.Where("kode_kamar = ?", kodeKamar).First(&kamar).Error
+	if err != nil {
+		return errors.New("kode kamar tidak valid atau tidak ditemukan")
+	}
+
+	if kamar.Status == "terisi" {
+		return errors.New("kamar tersebut sudah ditempati oleh penghuni lain")
+	}
+
+	var count int64
+	initializers.DB.Model(&models.Kamar{}).Where("penghuni_id = ?", residentID).Count(&count)
+	if count > 0 {
+		return errors.New("Anda sudah terdaftar di kamar lain. Silakan keluar dari kamar lama terlebih dahulu")
+	}
+
+	now := time.Now()
+	kamar.Status = "terisi"
+	kamar.PenghuniID = &residentID
+	kamar.TanggalMasuk = &now 
+	return initializers.DB.Save(&kamar).Error
+}
+
+func GetMyRoom(residentID uint) (*models.Kamar, error) {
+	var kamar models.Kamar
+	err := initializers.DB.Preload("TipeKamar").Where("penghuni_id = ?", residentID).First(&kamar).Error
+	if err != nil {
+		return nil, errors.New("Anda belum bergabung ke dalam kamar mana pun")
+	}
+	return &kamar, nil
 }
