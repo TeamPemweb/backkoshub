@@ -44,6 +44,10 @@ func Routes(r *gin.Engine) {
 			ownerGroup.GET("/rooms", controllers.GetRooms)
 			ownerGroup.PUT("/rooms/:id", controllers.UpdateRoom)
 			ownerGroup.DELETE("/rooms/:id", controllers.DeleteRoom)
+
+			ownerGroup.GET("/dashboard/stats", controllers.GetDashboardStats)
+			ownerGroup.GET("/dashboard/unpaid-residents", controllers.GetUnpaidResidents)
+			ownerGroup.GET("/residents", controllers.GetActiveResidents)
 		}
 
 		residentGroup := v1.Group("/resident")
