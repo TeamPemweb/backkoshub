@@ -1,0 +1,59 @@
+package services
+
+import (
+	"errors"
+	"time"
+
+	"github.com/TeamPemweb/backkoshub/initializers"
+	"github.com/TeamPemweb/backkoshub/models"
+)
+
+type BillingResponseDTO struct {
+	ID               uint       `json:"id"`
+	NomorKamar       string     `json:"nomor_kamar"`
+	NamaPenghuni     string     `json:"nama_penghuni"`
+	Nominal          float64    `json:"nominal"`
+	SiklusBayar      int        `json:"siklus_bayar"`
+	JatuhTempo       time.Time  `json:"jatuh_tempo"`
+	TanggalBayar     *time.Time `json:"tanggal_bayar"`
+	StatusPembayaran string     `json:"status_pembayaran"`
+	BuktiPembayaran  string     `json:"bukti_pembayaran"`
+}
+
+func GetAllBillingsByPemilik(pemilikID uint) ([]BillingResponseDTO, error) {
+	var billings []BillingResponseDTO
+
+	err := initializers.DB.Model(&models.Billing{}).
+		Select("billings.id, kamars.nomor_kamar, profil_penghunis.nama as nama_penghuni, billings.nominal, billings.siklus_bayar, billings.jatuh_tempo, billings.tanggal_bayar, billings.status_pembayaran, billings.bukti_pembayaran").
+		Joins("JOIN kamars ON kamars.id = billings.kamar_id").
+		Joins("JOIN tipe_kamars ON tipe_kamars.id = kamars.tipe_kamar_id").
+		Joins("JOIN profil_penghunis ON profil_penghunis.user_id = billings.penghuni_id").
+		Where("tipe_kamars.pemilik_id = ?", pemilikID).
+		Order("billings.created_at DESC").
+		Find(&billings).Error
+
+	return billings, err
+}
+
+func ConfirmBillingAsPaid(billingID uint, pemilikID uint) error {
+	var billing models.Billing
+
+	err := initializers.DB.Joins("JOIN kamars ON kamars.id = billings.kamar_id").
+		Joins("JOIN tipe_kamars ON tipe_kamars.id = kamars.tipe_kamar_id").
+		Where("billings.id = ? AND tipe_kamars.pemilik_id = ?", billingID, pemilikID).
+		First(&billing).Error
+
+	if err != nil {
+		return errors.New("tagihan tidak ditemukan atau bukan milik Anda")
+	}
+
+	if billing.StatusPembayaran == "lunas" {
+		return errors.New("tagihan sudah berstatus lunas")
+	}
+
+	now := time.Now()
+	billing.StatusPembayaran = "lunas"
+	billing.TanggalBayar = &now
+
+	return initializers.DB.Save(&billing).Error
+}
