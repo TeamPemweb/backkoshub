@@ -142,3 +142,25 @@ func GetMyRoom(c *gin.Context) {
 
 	c.JSON(http.StatusOK, kamar)
 }
+func EndLease(c *gin.Context) {
+	userIDInterface, exists := c.Get("UserID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Sesi tidak valid"})
+		return
+	}
+	pemilikID := userIDInterface.(uint)
+
+	idStr := c.Param("id")
+	kamarID, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID kamar tidak valid"})
+		return
+	}
+
+	if err := services.EndLease(uint(kamarID), pemilikID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Sewa berhasil diakhiri, status kamar kembali kosong"})
+}

@@ -150,3 +150,23 @@ func GetMyRoom(residentID uint) (*models.Kamar, error) {
 	}
 	return &kamar, nil
 }
+func EndLease(kamarID uint, pemilikID uint) error {
+	var kamar models.Kamar
+	
+	err := initializers.DB.Joins("JOIN tipe_kamars ON tipe_kamars.id = kamars.tipe_kamar_id").
+		Where("kamars.id = ? AND tipe_kamars.pemilik_id = ?", kamarID, pemilikID).
+		First(&kamar).Error
+	if err != nil {
+		return errors.New("kamar tidak ditemukan atau bukan milik kos Anda")
+	}
+
+	if kamar.Status == "kosong" {
+		return errors.New("kamar memang sudah dalam keadaan kosong")
+	}
+
+	kamar.Status = "kosong"
+	kamar.PenghuniID = nil
+	kamar.TanggalMasuk = nil
+
+	return initializers.DB.Save(&kamar).Error
+}
