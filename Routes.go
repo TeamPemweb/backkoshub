@@ -51,6 +51,9 @@ func Routes(r *gin.Engine) {
 
 			ownerGroup.GET("/billings", controllers.GetBillings)
 			ownerGroup.PUT("/billings/:id", controllers.ConfirmBillingPaid)
+
+			ownerGroup.GET("/complaints", controllers.GetComplaints)
+			ownerGroup.PUT("/complaints/:id", controllers.UpdateComplaintStatus)
 		}
 
 		residentGroup := v1.Group("/resident")
