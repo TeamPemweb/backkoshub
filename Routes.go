@@ -58,6 +58,7 @@ func Routes(r *gin.Engine) {
 			ownerGroup.PUT("/billings/:id/nominal", controllers.UpdateBillingNominal)
 
 			ownerGroup.GET("/complaints", controllers.GetComplaints)
+			ownerGroup.GET("/complaints/history", controllers.GetOwnerComplaintHistory)
 			ownerGroup.PUT("/complaints/:id", controllers.UpdateComplaintStatus)
 		}
 

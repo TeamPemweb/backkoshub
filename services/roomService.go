@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math/rand"
 	"time"
+
 	"github.com/TeamPemweb/backkoshub/initializers"
 	"github.com/TeamPemweb/backkoshub/models"
 	"gorm.io/gorm"
@@ -95,6 +96,7 @@ func DeleteRoom(id uint, pemilikID uint) error {
 
 	return initializers.DB.Delete(&kamar).Error
 }
+
 func JoinRoom(residentID uint, kodeKamar string) error {
 	var kamar models.Kamar
 	err := initializers.DB.Preload("TipeKamar").Where("kode_kamar = ?", kodeKamar).First(&kamar).Error
@@ -150,9 +152,10 @@ func GetMyRoom(residentID uint) (*models.Kamar, error) {
 	}
 	return &kamar, nil
 }
+
 func EndLease(kamarID uint, pemilikID uint) error {
 	var kamar models.Kamar
-	
+
 	err := initializers.DB.Joins("JOIN tipe_kamars ON tipe_kamars.id = kamars.tipe_kamar_id").
 		Where("kamars.id = ? AND tipe_kamars.pemilik_id = ?", kamarID, pemilikID).
 		First(&kamar).Error
@@ -164,9 +167,22 @@ func EndLease(kamarID uint, pemilikID uint) error {
 		return errors.New("kamar memang sudah dalam keadaan kosong")
 	}
 
-	kamar.Status = "kosong"
-	kamar.PenghuniID = nil
-	kamar.TanggalMasuk = nil
+	return initializers.DB.Transaction(func(tx *gorm.DB) error {
+		
+		err = tx.Where("kamar_id = ? AND status_pembayaran IN ?", kamarID, []string{"menunggu", "lewat_tenggat", "menunggu_konfirmasi"}).
+			Delete(&models.Billing{}).Error
+		if err != nil {
+			return errors.New("gagal membersihkan sisa tagihan menggantung di kamar ini")
+		}
 
-	return initializers.DB.Save(&kamar).Error
+		kamar.Status = "kosong"
+		kamar.PenghuniID = nil
+		kamar.TanggalMasuk = nil
+
+		if err := tx.Save(&kamar).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
 }

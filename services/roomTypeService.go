@@ -39,7 +39,17 @@ func UpdateRoomType(id uint, pemilikID uint, input RoomTypeInput) error {
 	tipeKamar.HargaPerBulan = input.HargaPerBulan
 	tipeKamar.SiklusBayar = input.SiklusBayar
 
-	return initializers.DB.Save(&tipeKamar).Error
+	if err := initializers.DB.Save(&tipeKamar).Error; err != nil {
+		return err
+	}
+	err := initializers.DB.Model(&models.Billing{}).
+		Where("status_pembayaran IN ? AND kamar_id IN (SELECT id FROM kamars WHERE tipe_kamar_id = ?)", []string{"menunggu", "lewat_tenggat"}, id).
+		Update("nominal", input.HargaPerBulan).Error
+	if err != nil {
+		return errors.New("tipe kamar berhasil diperbarui, tetapi gagal menyinkronkan nominal tagihan aktif: " + err.Error())
+	}
+
+	return nil
 }
 
 func DeleteRoomType(id uint, pemilikID uint) error {
