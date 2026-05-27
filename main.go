@@ -4,6 +4,7 @@ import (
 	"os"
 	"github.com/TeamPemweb/backkoshub/initializers"
 	"github.com/gin-gonic/gin"	
+	"github.com/TeamPemweb/backkoshub/middleware"
 )
 
 func init() {
@@ -14,6 +15,7 @@ func init() {
 
 func main() {
 	router := gin.Default()
+	router.Use(middleware.CORSMiddleware())
 	Routes(router)
 
 	router.Run(":" + os.Getenv("PORT"))
