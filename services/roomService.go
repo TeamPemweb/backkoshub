@@ -6,6 +6,7 @@ import (
 	"time"
 	"github.com/TeamPemweb/backkoshub/initializers"
 	"github.com/TeamPemweb/backkoshub/models"
+	"gorm.io/gorm"
 )
 
 type RoomInput struct {
@@ -96,7 +97,7 @@ func DeleteRoom(id uint, pemilikID uint) error {
 }
 func JoinRoom(residentID uint, kodeKamar string) error {
 	var kamar models.Kamar
-	err := initializers.DB.Where("kode_kamar = ?", kodeKamar).First(&kamar).Error
+	err := initializers.DB.Preload("TipeKamar").Where("kode_kamar = ?", kodeKamar).First(&kamar).Error
 	if err != nil {
 		return errors.New("kode kamar tidak valid atau tidak ditemukan")
 	}
@@ -111,11 +112,34 @@ func JoinRoom(residentID uint, kodeKamar string) error {
 		return errors.New("Anda sudah terdaftar di kamar lain. Silakan keluar dari kamar lama terlebih dahulu")
 	}
 
-	now := time.Now()
-	kamar.Status = "terisi"
-	kamar.PenghuniID = &residentID
-	kamar.TanggalMasuk = &now 
-	return initializers.DB.Save(&kamar).Error
+	return initializers.DB.Transaction(func(tx *gorm.DB) error {
+		now := time.Now()
+
+		kamar.Status = "terisi"
+		kamar.PenghuniID = &residentID
+		kamar.TanggalMasuk = &now
+
+		if err := tx.Save(&kamar).Error; err != nil {
+			return err
+		}
+
+		jatuhTempo := now.AddDate(0, 0, 7)
+
+		billing := models.Billing{
+			KamarID:          kamar.ID,
+			PenghuniID:       residentID,
+			Nominal:          kamar.TipeKamar.HargaPerBulan,
+			SiklusBayar:      kamar.TipeKamar.SiklusBayar,
+			JatuhTempo:       jatuhTempo,
+			StatusPembayaran: "menunggu",
+		}
+
+		if err := tx.Create(&billing).Error; err != nil {
+			return errors.New("gagal membuat tagihan pertama penghuni")
+		}
+
+		return nil
+	})
 }
 
 func GetMyRoom(residentID uint) (*models.Kamar, error) {

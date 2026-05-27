@@ -61,6 +61,10 @@ func Routes(r *gin.Engine) {
 		{
 			residentGroup.POST("/rooms/join", controllers.JoinRoom)
 			residentGroup.GET("/my-room", controllers.GetMyRoom)
+
+			residentGroup.GET("/my-billings", controllers.GetMyBillings)
+			residentGroup.POST("/my-billings/:id/pay", controllers.PayBilling)
+			residentGroup.GET("/my-billings/history", controllers.GetMyBillingHistory)
 		}
 	}
 }
