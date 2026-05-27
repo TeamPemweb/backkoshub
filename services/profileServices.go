@@ -74,7 +74,10 @@ func GetUserProfile(userID uint) (*ProfileResponse, error) {
 		profile.Stats.TotalTagihanMenunggu = int(tagihanCount)
 
 		var komplainCount int64
-		initializers.DB.Model(&models.Complaint{}).Where("penghuni_id = ? AND status_keluhan = ?", userID, "pending").Count(&komplainCount)
+		initializers.DB.Model(&models.Complaint{}).
+			Joins("JOIN kamars ON kamars.id = complaints.kamar_id").
+			Where("kamars.penghuni_id = ? AND complaints.status_keluhan = ?", userID, "pending").
+			Count(&komplainCount)
 		profile.Stats.TotalKomplainPending = int(komplainCount)
 
 		var kamar models.Kamar
@@ -89,7 +92,7 @@ func GetUserProfile(userID uint) (*ProfileResponse, error) {
 	return profile, nil
 }
 
-func UpdateUserProfile(userID uint, nama, nomorTelepon, namaKos, lokasiKos string) error {
+func SetupUserProfile(userID uint, nama, nomorTelepon, namaKos, lokasiKos string) error {
 	var user models.User
 	if err := initializers.DB.First(&user, userID).Error; err != nil {
 		return err
@@ -126,6 +129,39 @@ func UpdateUserProfile(userID uint, nama, nomorTelepon, namaKos, lokasiKos strin
 			}
 			return err
 		}
+		return initializers.DB.Save(&profil).Error
+	}
+
+	return errors.New("gagal setup profil: role tidak dikenali")
+}
+
+func UpdateUserProfile(userID uint, nama, nomorTelepon, namaKos, lokasiKos string) error {
+	var user models.User
+	if err := initializers.DB.First(&user, userID).Error; err != nil {
+		return err
+	}
+
+	if user.Role == "pemilik" {
+		var profil models.ProfilPemilik
+		if err := initializers.DB.Where("user_id = ?", userID).First(&profil).Error; err != nil {
+			return errors.New("profil belum dikonfigurasi, silakan lakukan setup profil terlebih dahulu")
+		}
+
+		profil.NamaKos = namaKos
+		profil.LokasiKos = lokasiKos
+		profil.NomorTelepon = nomorTelepon
+
+		return initializers.DB.Save(&profil).Error
+
+	} else if user.Role == "penghuni" {
+		var profil models.ProfilPenghuni
+		if err := initializers.DB.Where("user_id = ?", userID).First(&profil).Error; err != nil {
+			return errors.New("profil belum dikonfigurasi, silakan lakukan setup profil terlebih dahulu")
+		}
+
+		profil.Nama = nama
+		profil.NomorTelepon = nomorTelepon
+
 		return initializers.DB.Save(&profil).Error
 	}
 

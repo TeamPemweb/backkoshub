@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type ProfileSetupInput struct {
+type ProfileInput struct {
 	Nama         string `json:"nama"`
 	NomorTelepon string `json:"nomor_telepon" binding:"required"`
 	NamaKos      string `json:"nama_kos"`   
@@ -48,13 +48,13 @@ func SetupProfile(c *gin.Context) {
 		return
 	}
 
-	var input ProfileSetupInput
+	var input ProfileInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Format data tidak valid: " + err.Error()})
 		return
 	}
 
-	err := services.UpdateUserProfile(userID, input.Nama, input.NomorTelepon, input.NamaKos, input.LokasiKos)
+	err := services.SetupUserProfile(userID, input.Nama, input.NomorTelepon, input.NamaKos, input.LokasiKos)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan data profil: " + err.Error()})
 		return
@@ -62,5 +62,34 @@ func SetupProfile(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Profil berhasil dikonfigurasi",
+	})
+}
+func UpdateProfile(c *gin.Context) {
+	userIDInterface, exists := c.Get("UserID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Akses ditolak: Sesi tidak valid"})
+		return
+	}
+
+	userID, ok := userIDInterface.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Tipe data UserID tidak valid"})
+		return
+	}
+
+	var input ProfileInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Format data tidak valid: " + err.Error()})
+		return
+	}
+
+	err := services.UpdateUserProfile(userID, input.Nama, input.NomorTelepon, input.NamaKos, input.LokasiKos)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Profil berhasil diperbarui",
 	})
 }
