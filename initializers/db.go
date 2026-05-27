@@ -29,7 +29,9 @@ func SyncDatabase() {
 		&models.Kamar{},
 		&models.TipeKamar{},
 		&models.ProfilPemilik{},
-		&models.ProfilPenghuni{},)
+		&models.ProfilPenghuni{},
+		&models.PasswordResetToken{},
+	)
 	if err != nil {
 		fmt.Println("failed to migrate database")
 	}
