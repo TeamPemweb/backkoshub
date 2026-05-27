@@ -30,6 +30,8 @@ func Routes(r *gin.Engine) {
 				authProtected.POST("/choose-role", controllers.ChooseRole)
 				authProtected.POST("/profile/setup", controllers.SetupProfile)
 				authProtected.GET("/profile", controllers.GetProfile)
+				authProtected.DELETE("/account", controllers.DeleteResidentAccount)
+				
 			}
 		}
 		ownerGroup := v1.Group("/owner")
@@ -68,6 +70,7 @@ func Routes(r *gin.Engine) {
 
 			residentGroup.POST("/my-complaints", controllers.CreateComplaint)
 			residentGroup.GET("/my-complaints/history", controllers.GetMyComplaints)
+
 		}
 	}
 }

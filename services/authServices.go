@@ -98,3 +98,36 @@ func UpdateUserRole(userID uint, role string) error {
 
 	return nil
 }
+func DeleteResidentAccount(residentID uint) error {
+	return initializers.DB.Transaction(func(tx *gorm.DB) error {
+		var countTunggakan int64
+		tx.Model(&models.Billing{}).
+			Where("penghuni_id = ? AND status_pembayaran IN ?", residentID, []string{"menunggu", "lewat_tenggat"}).
+			Count(&countTunggakan)
+		
+		if countTunggakan > 0 {
+			return errors.New("tidak dapat menghapus akun karena Anda masih memiliki tunggakan tagihan yang belum lunas")
+		}
+
+		var kamar models.Kamar
+		err := tx.Where("penghuni_id = ?", residentID).First(&kamar).Error
+		if err == nil {
+			kamar.Status = "kosong"
+			kamar.PenghuniID = nil
+			kamar.TanggalMasuk = nil
+			if err := tx.Save(&kamar).Error; err != nil {
+				return err
+			}
+		}
+
+		if err := tx.Where("user_id = ?", residentID).Delete(&models.ProfilPenghuni{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Delete(&models.User{}, residentID).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+}

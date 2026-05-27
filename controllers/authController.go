@@ -76,3 +76,20 @@ func ChooseRole(c *gin.Context) {
 		"role":    input.Role,
 	})
 }
+func DeleteResidentAccount(c *gin.Context) {
+	userIDInterface, exists := c.Get("UserID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Sesi tidak valid"})
+		return
+	}
+	residentID := userIDInterface.(uint)
+
+	if err := services.DeleteResidentAccount(residentID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.SetCookie("Authorization", "", -1, "/", "", false, true)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Akun Anda berhasil dihapus secara permanen dari sistem"})
+}
