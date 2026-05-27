@@ -35,7 +35,10 @@ func Routes(r *gin.Engine) {
 		ownerGroup := v1.Group("/owner")
 		ownerGroup.Use(middleware.RequireAuth, middleware.RoleMiddleware("pemilik"))
 		{
-
+			ownerGroup.POST("/room-types", controllers.CreateRoomType)
+			ownerGroup.GET("/room-types", controllers.GetRoomTypes)
+			ownerGroup.PUT("/room-types/:id", controllers.UpdateRoomType)
+			ownerGroup.DELETE("/room-types/:id", controllers.DeleteRoomType)
 		}
 
 		residentGroup := v1.Group("/resident")
