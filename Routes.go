@@ -30,6 +30,7 @@ func Routes(r *gin.Engine) {
 				authProtected.POST("/choose-role", controllers.ChooseRole)
 				authProtected.POST("/profile/setup", controllers.SetupProfile)
 				authProtected.GET("/profile", controllers.GetProfile)
+				authProtected.PUT("/profile", controllers.UpdateProfile)
 				authProtected.DELETE("/account", controllers.DeleteResidentAccount)
 				
 			}
@@ -46,6 +47,7 @@ func Routes(r *gin.Engine) {
 			ownerGroup.GET("/rooms", controllers.GetRooms)
 			ownerGroup.PUT("/rooms/:id", controllers.UpdateRoom)
 			ownerGroup.DELETE("/rooms/:id", controllers.DeleteRoom)
+			ownerGroup.DELETE("/rooms/:id/end-lease", controllers.EndLease)
 
 			ownerGroup.GET("/dashboard/stats", controllers.GetDashboardStats)
 			ownerGroup.GET("/dashboard/unpaid-residents", controllers.GetUnpaidResidents)
@@ -53,6 +55,7 @@ func Routes(r *gin.Engine) {
 
 			ownerGroup.GET("/billings", controllers.GetBillings)
 			ownerGroup.PUT("/billings/:id", controllers.ConfirmBillingPaid)
+			ownerGroup.PUT("/billings/:id/nominal", controllers.UpdateBillingNominal)
 
 			ownerGroup.GET("/complaints", controllers.GetComplaints)
 			ownerGroup.PUT("/complaints/:id", controllers.UpdateComplaintStatus)
