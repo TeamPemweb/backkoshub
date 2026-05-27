@@ -51,3 +51,29 @@ func UpdateComplaintStatus(complaintID uint, pemilikID uint, status string) erro
 	complaint.StatusKeluhan = status
 	return initializers.DB.Save(&complaint).Error
 }
+func CreateComplaint(residentID uint, isiKeluhan string) error {
+	var kamar models.Kamar
+	err := initializers.DB.Where("penghuni_id = ?", residentID).First(&kamar).Error
+	if err != nil {
+		return errors.New("Anda belum bergabung ke kamar mana pun. Silakan join kamar terlebih dahulu sebelum membuat keluhan")
+	}
+
+	complaint := models.Complaint{
+		KamarID:       kamar.ID,
+		IsiKeluhan:    isiKeluhan,
+		StatusKeluhan: "pending",
+	}
+
+	return initializers.DB.Create(&complaint).Error
+}
+
+func GetMyComplaintsHistory(residentID uint) ([]models.Complaint, error) {
+	var complaints []models.Complaint
+
+	err := initializers.DB.Joins("JOIN kamars ON kamars.id = complaints.kamar_id").
+		Where("kamars.penghuni_id = ?", residentID).
+		Order("complaints.created_at DESC").
+		Find(&complaints).Error
+
+	return complaints, err
+}

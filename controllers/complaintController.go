@@ -53,3 +53,45 @@ func UpdateComplaintStatus(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Status keluhan berhasil diperbarui menjadi '" + input.StatusKeluhan + "'"})
 }
+
+func CreateComplaint(c *gin.Context) {
+	userIDInterface, exists := c.Get("UserID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Sesi tidak valid"})
+		return
+	}
+	residentID := userIDInterface.(uint)
+
+	var input struct {
+		IsiKeluhan string `json:"isi_keluhan" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Isi keluhan wajib diisi dan berupa text"})
+		return
+	}
+
+	if err := services.CreateComplaint(residentID, input.IsiKeluhan); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "Laporan keluhan berhasil dikirim ke pemilik kos"})
+}
+
+func GetMyComplaints(c *gin.Context) {
+	userIDInterface, exists := c.Get("UserID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Sesi tidak valid"})
+		return
+	}
+	residentID := userIDInterface.(uint)
+
+	complaints, err := services.GetMyComplaintsHistory(residentID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, complaints)
+}

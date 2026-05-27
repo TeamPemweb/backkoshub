@@ -65,6 +65,9 @@ func Routes(r *gin.Engine) {
 			residentGroup.GET("/my-billings", controllers.GetMyBillings)
 			residentGroup.POST("/my-billings/:id/pay", controllers.PayBilling)
 			residentGroup.GET("/my-billings/history", controllers.GetMyBillingHistory)
+
+			residentGroup.POST("/my-complaints", controllers.CreateComplaint)
+			residentGroup.GET("/my-complaints/history", controllers.GetMyComplaints)
 		}
 	}
 }
