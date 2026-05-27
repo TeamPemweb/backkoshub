@@ -42,8 +42,8 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-
-	c.SetCookie("Authorization", token, 3600*24*30, "/", "localhost", false, true)
+	c.SetSameSite(http.SameSiteNoneMode)
+	c.SetCookie("Authorization", token, 3600*24*30, "/", "", true, true)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Login berhasil",
@@ -89,7 +89,8 @@ func DeleteResidentAccount(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("Authorization", "", -1, "/", "", false, true)
+	c.SetSameSite(http.SameSiteNoneMode)
+	c.SetCookie("Authorization", "", -1, "/", "", true, true)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Akun Anda berhasil dihapus secara permanen dari sistem"})
 }
