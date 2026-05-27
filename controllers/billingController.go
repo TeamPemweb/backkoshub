@@ -16,7 +16,6 @@ func GetBillings(c *gin.Context) {
 	}
 	pemilikID := userIDInterface.(uint)
 
-	// ✨ REVISI: Membaca query parameter (?kamar_id=...&penghuni_id=...) dari URL frontend
 	kamarIDStr := c.Query("kamar_id")
 	penghuniIDStr := c.Query("penghuni_id")
 
@@ -70,6 +69,7 @@ func ConfirmBillingPaid(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Pembayaran tagihan berhasil dikonfirmasi"})
 }
+
 func UpdateBillingNominal(c *gin.Context) {
 	userIDInterface, exists := c.Get("UserID")
 	if !exists {
@@ -99,9 +99,6 @@ func UpdateBillingNominal(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Nominal tagihan berhasil diperbarui"})
-}
-type PayBillingInput struct {
-	BuktiPembayaran string `json:"bukti_pembayaran" binding:"required"`
 }
 
 func GetMyBillings(c *gin.Context) {
@@ -136,18 +133,12 @@ func PayBilling(c *gin.Context) {
 		return
 	}
 
-	var input PayBillingInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Bukti pembayaran wajib diisi berupa string URL"})
-		return
-	}
-
-	if err := services.PayBilling(uint(billingID), residentID, input.BuktiPembayaran); err != nil {
+	if err := services.PayBilling(uint(billingID), residentID); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Bukti pembayaran berhasil dikirim, menunggu konfirmasi pemilik kos"})
+	c.JSON(http.StatusOK, gin.H{"message": "Sistem berhasil mencatat pengalihan konfirmasi ke WhatsApp Owner"})
 }
 
 func GetMyBillingHistory(c *gin.Context) {

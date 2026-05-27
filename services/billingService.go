@@ -11,7 +11,20 @@ import (
 type BillingResponseDTO struct {
 	ID               uint       `json:"id"`
 	NomorKamar       string     `json:"nomor_kamar"`
+	NamaTipeKamar    string     `json:"nama_tipe_kamar"`
 	NamaPenghuni     string     `json:"nama_penghuni"`
+	Nominal          float64    `json:"nominal"`
+	SiklusBayar      int        `json:"siklus_bayar"`
+	JatuhTempo       time.Time  `json:"jatuh_tempo"`
+	TanggalBayar     *time.Time `json:"tanggal_bayar"`
+	StatusPembayaran string     `json:"status_pembayaran"`
+	BuktiPembayaran  string     `json:"bukti_pembayaran"`
+}
+
+type ResidentBillingDTO struct {
+	ID               uint       `json:"id"`
+	NomorKamar       string     `json:"nomor_kamar"`
+	NamaTipeKamar    string     `json:"nama_tipe_kamar"`
 	Nominal          float64    `json:"nominal"`
 	SiklusBayar      int        `json:"siklus_bayar"`
 	JatuhTempo       time.Time  `json:"jatuh_tempo"`
@@ -44,7 +57,9 @@ func GetAllBillingsByPemilik(pemilikID uint, kamarID uint, penghuniID uint) ([]B
 func ConfirmBillingAsPaid(billingID uint, pemilikID uint) error {
 	var billing models.Billing
 
-	err := initializers.DB.Joins("JOIN kamars ON kamars.id = billings.kamar_id").
+	err := initializers.DB.Model(&models.Billing{}).
+		Select("billings.*").
+		Joins("JOIN kamars ON kamars.id = billings.kamar_id").
 		Joins("JOIN tipe_kamars ON tipe_kamars.id = kamars.tipe_kamar_id").
 		Where("billings.id = ? AND tipe_kamars.pemilik_id = ?", billingID, pemilikID).
 		First(&billing).Error
@@ -63,17 +78,7 @@ func ConfirmBillingAsPaid(billingID uint, pemilikID uint) error {
 
 	return initializers.DB.Save(&billing).Error
 }
-type ResidentBillingDTO struct {
-	ID               uint       `json:"id"`
-	NomorKamar       string     `json:"nomor_kamar"`
-	NamaTipeKamar    string    `json:"nama_tipe_kamar"`
-	Nominal          float64    `json:"nominal"`
-	SiklusBayar      int        `json:"siklus_bayar"`
-	JatuhTempo       time.Time  `json:"jatuh_tempo"`
-	TanggalBayar     *time.Time `json:"tanggal_bayar"`
-	StatusPembayaran string     `json:"status_pembayaran"`
-	BuktiPembayaran  string     `json:"bukti_pembayaran"`
-}
+
 func UpdateBillingNominal(billingID uint, pemilikID uint, nominal float64) error {
 	var billing models.Billing
 
@@ -93,16 +98,17 @@ func GetMyActiveBillings(residentID uint) ([]ResidentBillingDTO, error) {
 	var billings []ResidentBillingDTO
 
 	err := initializers.DB.Model(&models.Billing{}).
-		Select("billings.id, kamars.nomor_kamar, billings.nominal, billings.siklus_bayar, billings.jatuh_tempo, billings.tanggal_bayar, billings.status_pembayaran, billings.bukti_pembayaran").
+		Select("billings.id, kamars.nomor_kamar, tipe_kamars.nama_tipe as nama_tipe_kamar, billings.nominal, billings.siklus_bayar, billings.jatuh_tempo, billings.tanggal_bayar, billings.status_pembayaran, billings.bukti_pembayaran").
 		Joins("JOIN kamars ON kamars.id = billings.kamar_id").
-		Where("billings.penghuni_id = ? AND billings.status_pembayaran IN ?", residentID, []string{"menunggu", "lewat_tenggat"}).
+		Joins("JOIN tipe_kamars ON tipe_kamars.id = kamars.tipe_kamar_id").
+		Where("billings.penghuni_id = ? AND billings.status_pembayaran IN ?", residentID, []string{"menunggu", "lewat_tenggat", "menunggu_konfirmasi"}).
 		Order("billings.jatuh_tempo ASC").
 		Find(&billings).Error
 
 	return billings, err
 }
 
-func PayBilling(billingID uint, residentID uint, buktiURL string) error {
+func PayBilling(billingID uint, residentID uint) error {
 	var billing models.Billing
 
 	err := initializers.DB.Where("id = ? AND penghuni_id = ?", billingID, residentID).First(&billing).Error
@@ -114,7 +120,9 @@ func PayBilling(billingID uint, residentID uint, buktiURL string) error {
 		return errors.New("tagihan ini sudah lunas")
 	}
 
-	billing.BuktiPembayaran = buktiURL
+	billing.StatusPembayaran = "menunggu_konfirmasi"
+	billing.BuktiPembayaran = "Dikirim via WhatsApp"
+
 	return initializers.DB.Save(&billing).Error
 }
 
